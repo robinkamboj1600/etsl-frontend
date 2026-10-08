@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------
+   Design tokens. These are the exact colours of the prototype,
+   expressed the way shadcn/ui expects them (HSL channels, no hsl()).
+   Light is the default; dark follows the OS unless data-theme is set
+   explicitly on <html>.
+   ------------------------------------------------------------------ */
+@layer base {
+  :root {
+    --background: 230 37% 97%;
+    --foreground: 231 66% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 231 66% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 231 66% 11%;
+
+    --primary: 234 70% 48%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 228 42% 95%;
+    --secondary-foreground: 231 66% 11%;
+
+    --muted: 228 42% 95%;
+    --muted-foreground: 230 20% 45%;
+
+    --accent: 235 100% 96%;
+    --accent-foreground: 234 70% 48%;
+
+    --destructive: 3 68% 39%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 226 38% 91%;
+    --input: 226 38% 91%;
+    --ring: 234 70% 48%;
+
+    --good: 153 63% 26%;
+    --good-soft: 150 32% 91%;
+    --warn: 38 88% 29%;
+    --warn-soft: 40 68% 91%;
+    --crit: 3 68% 39%;
+    --crit-soft: 5 69% 94%;
+
+    --radius: 0.625rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --background: 226 61% 7%;
+      --foreground: 229 78% 95%;
+      --card: 228 53% 13%;
+      --card-foreground: 229 78% 95%;
+      --popover: 228 53% 13%;
+      --popover-foreground: 229 78% 95%;
+      --primary: 234 100% 76%;
+      --primary-foreground: 228 53% 13%;
+      --secondary: 227 47% 18%;
+      --secondary-foreground: 229 78% 95%;
+      --muted: 227 47% 18%;
+      --muted-foreground: 229 32% 66%;
+      --accent: 229 51% 21%;
+      --accent-foreground: 234 100% 76%;
+      --destructive: 3 79% 71%;
+      --destructive-foreground: 228 53% 13%;
+      --border: 228 44% 23%;
+      --input: 228 44% 23%;
+      --ring: 234 100% 76%;
+      --good: 153 45% 57%;
+      --good-soft: 157 45% 11%;
+      --warn: 37 70% 59%;
+      --warn-soft: 42 41% 13%;
+      --crit: 3 79% 71%;
+      --crit-soft: 0 32% 15%;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --background: 226 61% 7%;
+    --foreground: 229 78% 95%;
+    --card: 228 53% 13%;
+    --card-foreground: 229 78% 95%;
+    --popover: 228 53% 13%;
+    --popover-foreground: 229 78% 95%;
+    --primary: 234 100% 76%;
+    --primary-foreground: 228 53% 13%;
+    --secondary: 227 47% 18%;
+    --secondary-foreground: 229 78% 95%;
+    --muted: 227 47% 18%;
+    --muted-foreground: 229 32% 66%;
+    --accent: 229 51% 21%;
+    --accent-foreground: 234 100% 76%;
+    --destructive: 3 79% 71%;
+    --destructive-foreground: 228 53% 13%;
+    --border: 228 44% 23%;
+    --input: 228 44% 23%;
+    --ring: 234 100% 76%;
+    --good: 153 45% 57%;
+    --good-soft: 157 45% 11%;
+    --warn: 37 70% 59%;
+    --warn-soft: 42 41% 13%;
+    --crit: 3 79% 71%;
+    --crit-soft: 0 32% 15%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04";
+  }
+}
