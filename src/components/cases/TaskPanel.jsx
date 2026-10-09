@@ -56,8 +56,8 @@ const fail = (err, fallback) =>
 
 /**
  * One task from the Re:amaze task service: read the ticket, edit the
- * reply, tick it for sending, or close it with an outcome. The service
- * sends the reply itself once ticked — this screen never does.
+ * reply, approve it for sending, or close it with an outcome. The service
+ * sends the reply itself once approved — this screen never does.
  */
 export function TaskPanel() {
   const { openTaskId, setOpenTaskId, session } = useApp();
@@ -200,8 +200,8 @@ export function TaskPanel() {
               {ticked && (
                 <Badge variant="good">
                   {t.approval_source === "machine"
-                    ? "ticked by the system"
-                    : "ticked by a person"}
+                    ? "Approved by the system"
+                    : "Approved by a person"}
                 </Badge>
               )}
               {t.state === "resolved" && <Badge variant="good">solved</Badge>}
@@ -248,8 +248,8 @@ export function TaskPanel() {
               {t.customer_replied_since_draft && (
                 <p className="mt-2 rounded-md border border-warn/40 bg-warn-soft px-3 py-2 text-xs text-warn">
                   The customer wrote again after this draft was prepared. Read
-                  the new message first. If you tick the draft now, the system
-                  may take the tick back and say why in "Why it is here".
+                  the new message first. If you approve the draft now, the system
+                  may take the approval back and say why in "Why it is here".
                 </p>
               )}
             </Section>
@@ -354,7 +354,7 @@ export function TaskPanel() {
                     </span>
                     {canPickResponse && ticked && (
                       <p className="mt-2 text-xs text-muted-foreground">
-                        Take the tick back to change the customer's response.
+                        Take the approval back to change the customer's response.
                       </p>
                     )}
                   </>
@@ -391,7 +391,7 @@ export function TaskPanel() {
                       <Badge variant="good">Merge done</Badge>
                       {t.merge_confirmed_at && (
                         <span className="text-xs text-muted-foreground">
-                          ticked{" "}
+                          confirmed{" "}
                           {new Date(t.merge_confirmed_at).toLocaleString(
                             "en-GB",
                           )}
@@ -437,7 +437,7 @@ export function TaskPanel() {
                               tasksApi.saveDraft(t.id, {
                                 merge_confirmed: true,
                               }),
-                            "Merge done ticked.",
+                            "Merge marked as done.",
                             false,
                             "merge",
                             true,
@@ -451,7 +451,7 @@ export function TaskPanel() {
                 </div>
                 {can && ticked && t.state !== "resolved" && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Take the reply's tick back before changing Merge done.
+                    Take the reply's approval back before changing Merge done.
                   </p>
                 )}
               </Section>
@@ -555,14 +555,14 @@ export function TaskPanel() {
                                 t.id,
                                 draftChanged ? { outbound_body: reply } : {},
                               ),
-                            "Ticked — the system will send it.",
+                            "Approved. The system will send it.",
                             false,
                             "tick",
                           )
                         }
                         loading={busy === "tick"}
                       >
-                        {editLocked ? "Approve as written" : "Tick to send"}
+                        {editLocked ? "Approve as written" : "Approve to send"}
                       </Button>
                       {editLocked && (
                         <Button
@@ -595,21 +595,21 @@ export function TaskPanel() {
                       onClick={() =>
                         act(
                           () => tasksApi.unapprove(t.id),
-                          "Tick removed.",
+                          "Approval removed.",
                           false,
                           "untick",
                         )
                       }
                     >
-                      Take the tick back
+                      Take the approval back
                     </Button>
                   )}
                 </div>
               )}
               <p className="mt-2 text-xs text-muted-foreground">
-                Ticking hands the reply to the system, which sends it. It does
-                not send it from here, and it can take the tick back (for
-                example if the customer wrote again) — the reason then shows
+                Approving hands the reply to the system, which sends it. It does
+                not send it from here, and it can take the approval back (for
+                example if the customer wrote again). The reason then shows
                 above.
               </p>
             </Section>
@@ -638,7 +638,7 @@ export function TaskPanel() {
                     disabled={!!busy || !outcome || ticked}
                     title={
                       ticked
-                        ? "Take the tick back first"
+                        ? "Take the approval back first"
                         : !outcome
                           ? "Pick an outcome"
                           : undefined
@@ -662,7 +662,7 @@ export function TaskPanel() {
                 </div>
                 {ticked && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    A ticked task cannot be closed — take the tick back first.
+                    An approved task cannot be closed. Take the approval back first.
                   </p>
                 )}
               </Section>

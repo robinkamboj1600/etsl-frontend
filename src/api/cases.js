@@ -2,17 +2,30 @@ import * as React from "react";
 import { http } from "./http";
 import { registerPerson } from "@/lib/rules/session";
 
+/** The filters every case list and the export share. */
+function filterQuery(params) {
+  const q = new URLSearchParams();
+  if (params.queueKey) q.set("queueKey", params.queueKey);
+  if (params.state) q.set("state", params.state);
+  if (params.retracted) q.set("retracted", "true");
+  if (params.search) q.set("search", params.search);
+  if (params.openedFrom) q.set("openedFrom", params.openedFrom.toISOString());
+  if (params.openedTo) q.set("openedTo", params.openedTo.toISOString());
+  if (params.submittedByName) q.set("submittedByName", params.submittedByName);
+  if (params.handledByName) q.set("handledByName", params.handledByName);
+  if (params.storeId) q.set("storeId", params.storeId);
+  return q;
+}
+
 export const casesApi = {
   list: (params = {}) => {
-    const q = new URLSearchParams();
-    if (params.queueKey) q.set("queueKey", params.queueKey);
-    if (params.state) q.set("state", params.state);
-    if (params.retracted) q.set("retracted", "true");
-    if (params.search) q.set("search", params.search);
+    const q = filterQuery(params);
     q.set("page", String(params.page || 1));
     q.set("pageSize", String(params.pageSize || 25));
     return http.get(`/cases?${q.toString()}`);
   },
+  filterOptions: (queueKey) => http.get(`/cases/filter-options?${new URLSearchParams({ queueKey })}`),
+  exportCsv: (params = {}) => http.download(`/cases/export?${filterQuery(params).toString()}`, "cases.csv"),
   get: (id) => http.get(`/cases/${id}`),
   openCounts: () => http.get("/cases/counts/open"),
   disputeStats: () => http.get("/cases/stats/disputes"),

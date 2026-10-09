@@ -60,3 +60,13 @@ export function useTaskCounts(session, ...deps) {
   }, [allowed, again, ...deps]);
   return counts;
 }
+
+/** "2h 15m", "3d 4h": exact time since a moment, for tickets in progress. */
+export function elapsed(iso) {
+  if (!iso) return "—";
+  const m = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m`;
+  if (m < 1440) return `${Math.floor(m / 60)}h ${m % 60}m`;
+  return `${Math.floor(m / 1440)}d ${Math.floor((m % 1440) / 60)}h`;
+}

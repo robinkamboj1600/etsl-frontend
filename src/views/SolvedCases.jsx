@@ -8,6 +8,7 @@ import { HttpError } from "@/api/http";
 import { useApp } from "@/store/app";
 import { canSee, dept } from "@/lib/rules/permissions";
 import { money } from "@/lib/rules/format";
+import { PERIODS, rangeOf } from "@/lib/period";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,32 +26,8 @@ const TICKET_TABS = [
   ["manual", "Manual tickets"],
   ["suptix", "Supplier tickets"],
 ];
-const PERIODS = [
-  ["all", "All time"],
-  ["today", "Today"],
-  ["7d", "Last 7 days"],
-  ["30d", "Last 30 days"],
-  ["custom", "Pick dates…"],
-];
-
 const tabLabel = (tab) =>
   tab === "refund" ? "Refund request" : TICKET_TABS.find(([k]) => k === tab)?.[1] || dept(tab)?.t || tab;
-
-const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
-/** The from/to a period stands for, in the browser's day. */
-function rangeOf(period, fromText, toText) {
-  const now = new Date();
-  if (period === "today") return { from: startOfDay(now) };
-  if (period === "7d") return { from: new Date(now.getTime() - 7 * 86_400_000) };
-  if (period === "30d") return { from: new Date(now.getTime() - 30 * 86_400_000) };
-  if (period === "custom")
-    return {
-      from: fromText ? new Date(`${fromText}T00:00:00`) : undefined,
-      to: toText ? new Date(`${toText}T23:59:59.999`) : undefined,
-    };
-  return {};
-}
 
 /**
  * Everything that has been solved, from every tab, in one list: the cases of

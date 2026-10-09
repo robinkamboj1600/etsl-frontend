@@ -2,7 +2,7 @@ import * as React from "react";
 import { TaskQueue } from "@/views/TaskQueue";
 import { TASK_QUEUES } from "@/api/tasks";
 import { toast } from "sonner";
-import { CornerUpLeft, ExternalLink } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, CornerUpLeft, ExternalLink } from "lucide-react";
 
 import { DEPTS } from "@/data/departments";
 import { LADDER } from "@/data/policy";
@@ -48,6 +48,11 @@ import { CaseRef, OrderRef } from "@/components/common/CaseRef";
 import { TicketLink } from "@/components/common/TicketLink";
 import { Who } from "@/components/common/Who";
 import { AgeTag, TurnTag } from "@/components/common/Tags";
+import { CaseFilterBar, NO_FILTERS } from "@/components/common/CaseFilterBar";
+import { rangeOf } from "@/lib/period";
+
+/* Queues where the Open time is coloured by how late the case is. */
+const TIMED = new Set(["cancel", "modify", "refunds", "repl", "voucher", "returns", "dispute", "outreach", "supplier", "cog"]);
 
 const ADJUST_REASONS = [
   "Too high for this reason",
@@ -59,7 +64,7 @@ const ADJUST_REASONS = [
 
 export function QueueList({ viewId }) {
   if (TASK_QUEUES.has(viewId)) return <TaskQueue key={viewId} queue={viewId} />;
-  return <CaseQueueList viewId={viewId} />;
+  return <CaseQueueList key={viewId} viewId={viewId} />;
 }
 
 /** The case's store, plus how its amounts are written (the order's currency, saved on the case). */
@@ -125,8 +130,12 @@ function CaseQueueList({ viewId }) {
   const [retracting, setRetracting] = React.useState(null);
   const [pending, setPending] = React.useState(null); // which button is running: "<caseId>:<action>" or "bulk"
 
+  const [filters, setFilters] = React.useState(NO_FILTERS);
+  const [options, setOptions] = React.useState(null);
+  const [exporting, setExporting] = React.useState(false);
   const [realRows, setRealRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [openSort, setOpenSort] = React.useState("none"); // "none" | "oldest" | "newest"
 
   const RFV = isRefundQueue(id) || id === "refunds";
   const rfIds = ["rf_paypal", "rf_whop", "rf_cj"].filter((x) =>
@@ -135,13 +144,27 @@ function CaseQueueList({ viewId }) {
 
   const fetchKey = id === "refunds" ? rfIds.join(",") : id;
 
+  /* Date, person and store filters are applied by the server, so the list is the real answer, not a slice of it. */
+  const filterKey = JSON.stringify(filters);
+  const serverFilters = React.useMemo(() => {
+    const { from, to } = rangeOf(filters.period, filters.from, filters.to);
+    return {
+      openedFrom: from,
+      openedTo: to,
+      submittedByName: filters.submittedBy === "all" ? undefined : filters.submittedBy,
+      handledByName: filters.handledBy === "all" ? undefined : filters.handledBy,
+      storeId: filters.storeId === "all" ? undefined : filters.storeId,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey]);
+
   const loadReal = React.useCallback(() => {
     if (!fetchKey) return;
     setLoading(true);
     /* Only open and retracted cases are fetched here; solved ones live in the Solved Cases tab. */
     Promise.all([
-      casesApi.list({ queueKey: fetchKey, state: "open", pageSize: 100 }),
-      casesApi.list({ queueKey: fetchKey, retracted: true, pageSize: 100 }),
+      casesApi.list({ queueKey: fetchKey, state: "open", pageSize: 100, ...serverFilters }),
+      casesApi.list({ queueKey: fetchKey, retracted: true, pageSize: 100, ...serverFilters }),
     ])
       .then(([open, retracted]) => {
         setRealRows(open.rows.concat(retracted.rows).map(toCaseView));
@@ -154,11 +177,39 @@ function CaseQueueList({ viewId }) {
         );
       })
       .finally(() => setLoading(false));
-  }, [fetchKey]);
+  }, [fetchKey, serverFilters]);
 
   React.useEffect(() => {
     loadReal();
   }, [loadReal]);
+
+  React.useEffect(() => {
+    if (!fetchKey) return undefined;
+    let alive = true;
+    casesApi
+      .filterOptions(fetchKey)
+      .then((o) => alive && setOptions(o))
+      .catch(() => alive && setOptions(null));
+    return () => {
+      alive = false;
+    };
+  }, [fetchKey]);
+
+  const canExport = role === "lead" || role === "agent" || role === "checker";
+  const exportCases = async (kind) => {
+    setExporting(true);
+    try {
+      await casesApi.exportCsv({
+        queueKey: fetchKey,
+        ...(kind === "retracted" ? { retracted: true } : { state: kind }),
+        ...serverFilters,
+      });
+    } catch (err) {
+      toast.error(err instanceof HttpError ? err.detail || err.code : "Could not export.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const cases = realRows;
 
@@ -258,7 +309,11 @@ function CaseQueueList({ viewId }) {
   rows = rows.filter((c) => matchFilter(c, fsel));
 
   /* Done sinks to the bottom so the open work stays on top. */
-  rows = rows.slice().sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0));
+  const sortable = TIMED.has(id) || RFV;
+  const byAge = sortable && openSort !== "none" ? (openSort === "oldest" ? -1 : 1) : 0;
+  rows = rows
+    .slice()
+    .sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0) || (byAge ? (a.age - b.age) * byAge : 0));
 
   const selected = Object.keys(marked).filter((k) => marked[k]);
 
@@ -404,6 +459,16 @@ function CaseQueueList({ viewId }) {
             setMarked({});
           }}
         />
+        <CaseFilterBar
+          filters={filters}
+          onChange={(f) => {
+            setFilters(f);
+            setMarked({});
+          }}
+          options={options}
+          onExport={canExport ? exportCases : undefined}
+          exporting={exporting}
+        />
         {(teamOpts || cogOpts || routeOpts) && (
           <div className="flex flex-wrap items-center gap-2">
             {teamOpts && (
@@ -504,7 +569,19 @@ function CaseQueueList({ viewId }) {
                     key={`${c}-${i}`}
                     className={i === 0 ? "w-8" : undefined}
                   >
-                    {c}
+                    {c === "Open" && sortable ? (
+                      <button
+                        type="button"
+                        title="Sort by hours open"
+                        onClick={() => setOpenSort(openSort === "oldest" ? "newest" : openSort === "newest" ? "none" : "oldest")}
+                        className="inline-flex items-center gap-1 uppercase hover:text-foreground"
+                      >
+                        Open
+                        {openSort === "oldest" ? <ArrowDown className="h-3 w-3" /> : openSort === "newest" ? <ArrowUp className="h-3 w-3" /> : <ArrowUpDown className="h-3 w-3 opacity-50" />}
+                      </button>
+                    ) : (
+                      c
+                    )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -763,7 +840,7 @@ function CaseQueueList({ viewId }) {
                       <TurnTag c={c} />
                     </TableCell>
                     <TableCell>
-                      <AgeTag c={c} />
+                      <AgeTag c={c} timed={TIMED.has(id) || RFV} />
                     </TableCell>
                     <TableCell>
                       <Who uid={c.by || "anna"} c={c} />

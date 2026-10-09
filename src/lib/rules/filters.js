@@ -1,3 +1,5 @@
+import { hoursLeft } from "@/lib/rules/age";
+
 /**
  * Which filter tabs a queue gets. A queue holds only the work that is still
  * open: a case that is processed moves to the Solved Cases tab.
@@ -8,7 +10,7 @@ export function filterSpec(id, isRF) {
   if (id === "spam") return base.concat([["pending", "Pending"]]);
   if (id === "manual") return base.concat([["wij", "To do"], ["klant", "Waiting on customer"]]);
   if (isRF) return base.concat([["wij", "To do"], ["nofunds", "No funds"]]);
-  if (id === "voucher") return base.concat([["wij", "To do"], ["nocode", "Needs a code"]]);
+  if (id === "voucher") return base.concat([["wij", "To do"]]);
   if (id === "repl")
     return base.concat([
       ["wij", "To do"],
@@ -56,7 +58,7 @@ export function matchFilter(c, k) {
   if (k === "nocode") return !c.code2;
   if (k === "noamount") return !(c.cog > 0);
   if (k === "notrack") return !(c.rtn || "").trim();
-  if (k === "overdue") return c.due != null && c.due - c.age <= 0;
+  if (k === "overdue") return (hoursLeft(c) ?? 1) <= 0;
   return c.turn === k && !c.nofunds;
 }
 

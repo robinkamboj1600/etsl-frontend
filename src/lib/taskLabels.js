@@ -57,3 +57,9 @@ export const DUP_TAGS = {
   duplicate: { label: "Duplicate", variant: "warn", hint: "Another open ticket from the same customer is being answered. Resolve this one in Re:amaze." },
   parent: { label: "Parent of duplicates", variant: "brand", hint: "The newer ticket. Merge the older one into it in Re:amaze, then tick Merge done." },
 };
+
+export const FAULT_LABELS = {
+  supplier_s_fault: "Supplier's fault",
+  customer_s_fault: "Customer's fault",
+  unknown: "Fault not sure",
+};
